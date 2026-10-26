@@ -72,7 +72,7 @@ jobs:
               'docker rm cs6620-app || true',
               f'docker run -d --restart unless-stopped -p 80:5000 --name cs6620-app {image}',
               'docker ps --filter name=cs6620-app',
-              'curl --fail --silent --show-error --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:80/ > /dev/null',
+              'for i in $(seq 1 30); do if curl -fsS --max-time 5 http://127.0.0.1:80/ >/dev/null 2>&1; then echo "HTTP ready on attempt $i"; break; fi; if [ "$i" -eq 30 ]; then echo "HTTP health check failed"; docker ps -a --filter name=cs6620-app; docker logs --tail 100 cs6620-app; exit 1; fi; sleep 2; done',
               'docker image inspect ' + image + ' --format="{{json .Config.Labels}}"',
           ]
           with open('ssm-params.json', 'w', encoding='utf-8') as f:
